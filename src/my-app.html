@@ -21,14 +21,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="yt-search.html">
+<link rel="import" href="yt-player.html">
+<link rel="import" href="main-menu.html">
 <link rel="import" href="my-icons.html">
 
 <dom-module id="my-app">
   <template>
     <style>
       :host {
-        --app-primary-color: #4285f4;
+        --app-primary-color: #0f033e;
         --app-secondary-color: black;
+        --app-button-color: #2783aa;
 
         display: block;
       }
@@ -72,7 +75,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         tail="{{subroute}}"></app-route>
 
 
-  <yt-search></yt-search>
+  <yt-player></yt-player>
+  <!--<main-menu></main-menu>-->
     <!--<app-drawer-layout fullbleed>
       &lt;!&ndash; Drawer content &ndash;&gt;
       <app-drawer>

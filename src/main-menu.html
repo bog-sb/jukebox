@@ -1,63 +1,35 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/paper-slider/paper-slider.html">
-<link rel="import" href="../bower_components/paper-search/paper-search.html">
-<!--<link rel="import" href="../bower_components/paper-fab/paper-fab.html">-->
-<!--<link rel="import" href="/bower_components/iron-meta/iron-meta.html">-->
-<!--<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">-->
-<!--<link rel="import" href="/bower_components/iron-iconset-svg/iron-iconset-svg.html">-->
-<!--<link rel="import" href="/bower_components/iron-iconset/iron-iconset.html">-->
-<!--<link rel="import" href="../bower_components/iron-icons/iron-icons.html">-->
-<!--<link rel="import" href="/bower_components/iron-icon/iron-icon.html">-->
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 
-<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
-<!--<link rel="import" href="bower_components/fontawesome-iconset/fa-all.html">-->
-
-<dom-module id="yt-search">
+<dom-module id="main-menu">
     <!-- Defines the element's style and local DOM -->
     <template>
         <style>
             :host {
                 display: block;
-
                 padding: 16px;
             }
 
-            .result {
-                width: 100%;
-                height: 100px;
-                border: 1px solid darkgreen;
+            paper-button.center{
+                margin:0 auto;
+                background-color: var(--app-button-color);
             }
 
-            .thumbnail {
-                float: left;
-                max-height: 100%;
-                max-width: 30%;
-            }
-
-            .title {
-                float: left;
-                max-width: 70%;
-            }
-
-            /*paper-icon-button {*/
-                /*border: 2px solid;*/
-                /*border-radius: 25px;*/
+            /*paper-button {*/
+                /*background-color: var(--app-button-color);*/
             /*}*/
         </style>
 
-        <h1>Search</h1>
-        <!--<paper-search-bar on-paper-search-search="search"></paper-search-bar>-->
-        <h2>Search panel</h2>
-        <paper-search-bar
-                placeholder="Search..."
-                hide-filter-button="true"
-                query="{{query}}"
-        >
-        </paper-search-bar>
+        <div class="container"></div>
+        <h1>Welcome</h1>
+
+        <paper-button fill="true" class="center">Create a jukebox</paper-button>
+
+        <h2> OR </h2>
+
+        <paper-button fill="true" class="center"></paper-button>
 
         <template is="dom-repeat" items="{{items}}">
-            <div class="result">
-                <img src="{{item.snippet.thumbnails.default.url}}" class="thumbnail">
 
                 <div class="title">
                     {{item.snippet.title}}
@@ -79,7 +51,7 @@
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
         Polymer({
-            is: 'yt-search',
+            is: 'main-menu',
             listeners: {
                 'paper-search-search': 'doSearch'
             },
