@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>SATANEALA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://w.soundcloud.com/player/api.js" type="text/javascript"></script>
+
+<script charset="utf-8" src="js/fb.js"></script>
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+  <h1>Welcome to SATANEALA Radio!</h1>
+
+  <fb:login-button scope="user_groups,read_stream" onlogin="checkLoginState();">
+  </fb:login-button>
+  <button id="logout-btn" onClick="FB.logout(function(response) });">Logout</button>
+  <div id="status"></div>
+
+
+  <div id="player-controls">
+    <!-- <a id="prev" href="#">Prev</a> -->
+    <a id="play" href="#" onClick="player.play()">Play</a> <a id="pause" href="#" onClick="player.pause()">Pause</a> <a
+      id="next" href="#" onClick="startNextSong()">Next</a>
+  </div>
+
+  <div id="player"></div>
+
+  <script type="text/javascript" src="js/ScPlayer.js"></script>
+  <script type="text/javascript" src="js/YtPlayer.js"></script>
+
+  <script type="text/javascript">
+			var urls;
+			var ready=false;
+			var ytReady = false;
+			var urlsLoaded = false;
+			var nextSongIndex = 0;
+			var player, player2;
+
+			function startNextSong() {
+				player2.play();
+				//destroy player
+				player.destroy();
+				player = player2;
+				//if(nextSongIndex < urls.length){
+				initNextSong();
+				//}
+			}
+
+			function createNextPlayer() {
+				var player = null;
+				var invalidUrl = true;
+				
+				while(invalidUrl){
+    				var url = urls[nextSongIndex];
+    				invalidUrl = false;
+    				if (isScUrl(url)) {
+    					player = new ScPlayer(url);
+    				} else if (isYtUrl(url)) {
+    					player = new YtPlayer(url);
+    				}else{
+    					invalidUrl = true;
+    				}
+    				nextSongIndex++;
+    				//TODO:do something if the url is unknown, like try the next url
+				}
+				return player;
+			}
+
+			function initNextSong() {
+				player2 = createNextPlayer();
+				player2.initPlayer();
+				player.onFinished(startNextSong);
+
+			}
+			
+			function initRadio(){
+				if(radioReadyToStart()){
+				//init first song player
+				player = createNextPlayer();
+				player.initPlayer();
+
+				initNextSong();
+				}
+			}
+
+			function radioReadyToStart(){
+				return ytReady && urlsLoaded;
+			}
+
+			function onYouTubeIframeAPIReady() {
+				ytReady=true;
+				initRadio();
+			}
+			
+			function setUrls(u){
+				urls = u;
+				urlsLoaded = true;
+				initRadio();
+			}
+
+			function isScUrl(url) {
+				return url.toLowerCase().indexOf("soundcloud") > -1 ? true
+						: false;
+			}
+
+			function isYtUrl(url) {
+				return url.toLowerCase().indexOf("youtu") > -1 ? true : false;
+			}
+			
+			function ytStateChanged(event) {
+				if (event.data == YT.PlayerState.ENDED) {
+					startNextSong();
+				}
+			}
+
+			var tag = document.createElement('script');
+			tag.src = "//www.youtube.com/iframe_api";
+			var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+		</script>
+	<script src="http://www.youtube.com/player_api" type="text/javascript"></script>
+
+</body>
+</html>

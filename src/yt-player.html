@@ -1,8 +1,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/paper-slider/paper-slider.html">
-<link rel="import" href="../bower_components/paper-search/paper-search.html">
 <link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
 
 <dom-module id="yt-player">
     <!-- Defines the element's style and local DOM -->
@@ -36,7 +35,7 @@
                 max-width: 70%;
             }
 
-            .player {
+            #player {
                 border: 2px solid green;
                 height: 400px;
                 width: 80%;
@@ -63,29 +62,42 @@
                 bottom: 30px;
                 right: 30px;
             }
+
+            .item {
+                @apply(--layout-horizontal);
+                padding: 5px;
+                border-radius: 8px;
+                background-color: darkslategrey;
+                border: 1px solid #ddd;
+                max-width: 800px;
+                margin: 16px auto 0 auto;
+            }
+
+            .item:focus {
+                outline: 0;
+                border-color: #333;
+            }
         </style>
 
-        <h1>Hi! Welcome to our awesome jukebox. Start adding songs!</h1>
+        <h1>Hi! Welcome to our awesome jukebox. Start adding songs! </h1>
+        <!-- <paper-button on-tap="fireGoToSearch">Search</paper-button>-->
 
-        <div class="player">
+
+        <div id="player">
 
         </div>
 
         <div class="result-container">
-            <template is="dom-repeat" items="{{items}}">
-                <div class="result" on-tap="songTapped">
-                    <paper-ripple></paper-ripple>
-                    <img src="{{item.snippet.thumbnails.default.url}}" class="thumbnail">
-
-                    <div class="title">
-                        {{item.snippet.title}}
+            <iron-list items="[[queue]]" as="item">
+                <template>
+                    <div class="item" on-tap="songTapped">
+                        <img src="{{item.snippet.thumbnails.default.url}}" class="thumbnail" style="height:40px;">
+                        <div class="title">
+                            {{item.snippet.title}}
+                        </div>
                     </div>
-                </div>
-            </template>
-        </div>
-
-        <div class="footer">
-            Join the party at: jukebox.com/1A
+                </template>
+            </iron-list>
         </div>
 
         <paper-fab icon="menu" class="play" on-tap="togglePlay"></paper-fab>
@@ -93,12 +105,38 @@
 
     </template>
     <!-- Creates the element's prototype and registers it -->
+    <script type="text/javascript" src="YtPlayer.js"></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
         Polymer({
             is: 'yt-player',
+            properties: {
+                queue: {
+                    type: Array,
+                    reflectToAttribute: true,
+                    notify: true
+//                    observer: 'queueChanged'
+                },
+                urls: [],
+                ready: false,
+                ytReady: false,
+                urlsLoaded: false,
+                nextSongIndex: 0,
+                player: {},
+                player2: {}
+            },
+            observers: [
+                'queueChanged(queue.*)'
+            ],
+
             listeners: {
                 'paper-search-search': 'doSearch'
+            },
+            queueChanged: function (newValue, oldValue) {
+                console.log('new queue' + this.queue)
+            },
+            fireGoToSearch: function () {
+                this.fire('go-to-search');
             },
             togglePlay: function (event) {
                 console.log('toggle play');
@@ -106,33 +144,11 @@
 
                 //pause/resume
             },
-            songTapped: function(event){
-                console.log('song tapped '+event.model.get('item'))
-
-
+            songTapped: function (event) {
+                console.log('song tapped ' + event.model.get('item'))
             },
-            handleTap: function (event) {
-                console.log(event.model.get('item.id.videoId'))
-            },
-            doSearch: function () {
-                var query = this.search && this.search.length > 0 ? this.search : 'asd' //TODO: delete after dev is done
-                var me = this;
-                gapi.client.youtube.search.list({
-                    q: query,
-                    part: 'snippet',
-                    type: 'video',
-                    videoEmbeddable: true
-                }).then(function (resp) {
-                    console.log(resp.result.items.map(function (e) {
-                        return e.snippet.title
-                    }));
-                    me.items = resp.result.items;
-                }, function (reason) {
-                    console.log('Error: ' + reason.result.error.message);
-                });
-            },
-
             ready: function () {
+
                 var me = this;
                 var initYoutubeApi = function () {
                     var api = gapi.client.init({
@@ -143,7 +159,36 @@
                     });
                 }
 //                gapi.load('client', initYoutubeApi);
-                this.items = [1,2,3,4,5,6,7]
+            },
+            startNextSong: function () {
+                player2.play();
+                player.destroy();
+                player = player2;
+                initNextSong();
+            },
+            initNextSong: function () {
+                player2 = createNextPlayer();
+                player2.initPlayer();
+                player.onFinished(startNextSong);
+            },
+            createNextPlayer: function () {
+                var player = null;
+                var invalidUrl = true;
+
+                while (invalidUrl) {
+                    var url = urls[nextSongIndex];
+                    invalidUrl = false;
+                    if (isScUrl(url)) {
+                        player = new ScPlayer(url);
+                    } else if (isYtUrl(url)) {
+                        player = new YtPlayer(url);
+                    } else {
+                        invalidUrl = true;
+                    }
+                    nextSongIndex++;
+                    //TODO:do something if the url is unknown, like try the next url
+                }
+                return player;
             }
         })
         ;
@@ -155,5 +200,51 @@
             });
         }
         gapi.load('client', initYoutubeApi);
+
+
+        function initRadio() {
+            if (radioReadyToStart()) {
+                //init first song player
+                player = createNextPlayer();
+                player.initPlayer();
+
+                initNextSong();
+            }
+        }
+
+        function radioReadyToStart() {
+            return ytReady && urlsLoaded;
+        }
+
+        function onYouTubeIframeAPIReady() {
+            ytReady = true;
+            initRadio();
+        }
+
+        function setUrls(u) {
+            urls = u;
+            urlsLoaded = true;
+            initRadio();
+        }
+
+        function isScUrl(url) {
+            return url.toLowerCase().indexOf("soundcloud") > -1 ? true
+                : false;
+        }
+
+        function isYtUrl(url) {
+            return url.toLowerCase().indexOf("youtu") > -1 ? true : false;
+        }
+
+        function ytStateChanged(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                startNextSong();
+            }
+        }
+
+        var tag = document.createElement('script');
+        tag.src = "//www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     </script>
 </dom-module>
